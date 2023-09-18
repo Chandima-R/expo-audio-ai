@@ -1,39 +1,73 @@
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Audio } from 'expo-av';
-import {useRoute} from "@react-navigation/native";
-import {widthPercentageToDP as wp} from "react-native-responsive-screen";
-import {Image} from "expo-image";
+import { useRoute } from "@react-navigation/native";
+import { widthPercentageToDP as wp } from "react-native-responsive-screen";
+import { Image } from "expo-image";
+import axios from 'axios'; // Import Axios for making HTTP requests
 
 export default function HomeScreen() {
-    const [recording, setRecording] = React.useState();
-    const [recordings, setRecordings] = React.useState([]);
-    const [message, setMessage] = React.useState("");
-    const [playingSound, setPlayingSound] = React.useState(null);
-    const [playingSoundIndex, setPlayingSoundIndex] = React.useState(null);
+    const [recording, setRecording] = useState(null);
+    const [recordings, setRecordings] = useState([]);
+    const [message, setMessage] = useState("");
+    const [playingSound, setPlayingSound] = useState(null);
+    const [playingSoundIndex, setPlayingSoundIndex] = useState(null);
+    const [isRecording, setIsRecording] = useState(false);
 
+    const route = useRoute();
+    const { selectedLanguage, selectedGrade } = route.params;
 
-    const route = useRoute()
-    const {selectedLanguage, selectedGrade} = route.params
+    useEffect(() => {
+        // Initialize audio recording when the component mounts
+        (async () => {
+            const { status } = await Audio.requestPermissionsAsync();
+            if (status === 'granted') {
+                const recordingObject = new Audio.Recording();
+                await recordingObject.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+                setRecording(recordingObject);
+            }
+        })();
+    }, []);
+
+    async function sendAudioToAPI(audioData, selectedLanguage, selectedGrade) {
+        try {
+            // Replace 'YOUR_API_URL' with the actual URL of your API endpoint
+            const apiUrl = 'http://127.0.0.1:5000/chatbot';
+
+            // Convert audio data to Base64 encoding
+            const audioBase64 = audioData.toString('base64');
+
+            // Define the request body with language, grade, and audio data
+            const requestBody = {
+                language: selectedLanguage,
+                grade: selectedGrade,
+                audio: audioBase64,
+                // Add any other metadata required by your API
+            };
+
+            // Make an HTTP POST request to send the audio data
+            const response = await axios.post(apiUrl, requestBody);
+
+            // Handle the API response as needed
+            console.log('API response:', response.data);
+
+            // You can also update your UI with a success message or perform other actions
+        } catch (error) {
+            // Handle errors, e.g., network issues or API errors
+            console.error('Failed to send audio to API:', error);
+
+            // You can also update your UI with an error message or perform other error-handling actions
+        }
+    }
 
     async function startRecording() {
         try {
-            const permission = await Audio.requestPermissionsAsync();
-
-            if (permission.status === "granted") {
-                await Audio.setAudioModeAsync({
-                    allowsRecordingIOS: true,
-                    playsInSilentModeIOS: true
-                });
-
-                const { recording } = await Audio.Recording.createAsync(
-                    Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
-                );
-
-                setRecording(recording);
+            if (recording) {
+                await recording.startAsync();
+                setIsRecording(true);
             } else {
-                setMessage("Please grant permission to app to access microphone");
+                setMessage("Recording object is not available.");
             }
         } catch (err) {
             console.error('Failed to start recording', err);
@@ -41,18 +75,24 @@ export default function HomeScreen() {
     }
 
     async function stopRecording() {
-        setRecording(undefined);
-        await recording.stopAndUnloadAsync();
-
-        let updatedRecordings = [...recordings];
-        const { sound, status } = await recording.createNewLoadedSoundAsync();
-        updatedRecordings.push({
-            sound: sound,
-            duration: getDurationFormatted(status.durationMillis),
-            file: recording.getURI()
-        });
-
-        setRecordings(updatedRecordings);
+        if (recording) {
+            setIsRecording(false);
+            try {
+                await recording.stopAndUnloadAsync();
+                let updatedRecordings = [...recordings];
+                const { sound, status } = await recording.createNewLoadedSoundAsync();
+                updatedRecordings.push({
+                    sound: sound,
+                    duration: getDurationFormatted(status.durationMillis),
+                    file: recording.getURI()
+                });
+                setRecordings(updatedRecordings);
+                // Send the recorded audio, selectedLanguage, and selectedGrade to the API
+                await sendAudioToAPI(audioData, selectedLanguage, selectedGrade);
+            } catch (err) {
+                console.error('Failed to stop recording', err);
+            }
+        }
     }
 
     function getDurationFormatted(millis) {
@@ -96,15 +136,14 @@ export default function HomeScreen() {
         });
     }
 
-
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.imageContainer}>
                 <Image
-                   source={require('../../assets/welcome.png')}
-                   style={{width: wp(20), height: wp(20), marginRight: 20}}
-                   contentFit="cover"
-                   transition={1000}
+                    source={require('../../assets/welcome.png')}
+                    style={{ width: wp(20), height: wp(20), marginRight: 20 }}
+                    contentFit="cover"
+                    transition={1000}
                 />
                 <View>
                     <Text style={styles.languageText}>Language: {selectedLanguage}</Text>
@@ -120,8 +159,8 @@ export default function HomeScreen() {
 
             <TouchableOpacity
                 style={styles.recordingButton}
-                onPress={recording ? stopRecording : startRecording}>
-                <Text style={styles.buttonText}>{recording ? 'Stop Recording' : 'Start Recording'}</Text>
+                onPress={isRecording ? stopRecording : startRecording}>
+                <Text style={styles.buttonText}>{isRecording ? 'Stop Recording' : 'Start Recording'}</Text>
             </TouchableOpacity>
             <StatusBar style="auto" />
         </SafeAreaView>
@@ -136,7 +175,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-    recordingButton:{
+    recordingButton: {
         backgroundColor: '#059669',
         zIndex: 50,
         padding: 10,
@@ -145,53 +184,52 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: '100%'
     },
-    buttonText:{
+    buttonText: {
         fontSize: wp(4),
         color: '#fff',
         textAlign: 'center',
     },
-    imageContainer:{
+    imageContainer: {
         display: 'flex',
         alignItems: "center",
         justifyContent: 'flex-start',
         flexDirection: 'row',
     },
-    logoImage:{
+    logoImage: {
         marginRight: 20,
         width: '100%',
         backgroundColor: '#0553',
     },
-    languageText:{
+    languageText: {
         fontSize: wp(4),
     },
-    gradeText:{
+    gradeText: {
         fontSize: wp(4),
     },
-    messageList:{
+    messageList: {
         backgroundColor: '#fafafa',
         flex: 1,
         width: '100%',
         padding: 10,
         marginTop: 10
     },
-    messageListTitle:{
+    messageListTitle: {
         fontSize: wp(4),
         textTransform: 'capitalize'
     },
-    row:{
+    row: {
         display: 'flex',
         flexDirection: 'row',
         width: '100%',
         justifyContent: 'space-between',
         marginBottom: 5,
     },
-    messageListButton:{
-
+    messageListButton: {
         backgroundColor: '#34D399',
-        padding:10,
+        padding: 10,
         borderRadius: 5,
     },
-    messageListButtonText:{
+    messageListButtonText: {
         fontSize: wp(4),
         color: '#fff',
     }
