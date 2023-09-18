@@ -100,10 +100,11 @@ export default function HomeScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.imageContainer}>
-                <Image contentFit="cover"
+                <Image
+                   source={require('../../assets/welcome.png')}
+                   style={{width: wp(20), height: wp(20), marginRight: 20}}
+                   contentFit="cover"
                    transition={1000}
-                   source="https://picsum.photos/seed/696/3000/2000"
-                   style={styles.logoImage}
                 />
                 <View>
                     <Text style={styles.languageText}>Language: {selectedLanguage}</Text>
@@ -152,6 +153,8 @@ const styles = StyleSheet.create({
     imageContainer:{
         display: 'flex',
         alignItems: "center",
+        justifyContent: 'flex-start',
+        flexDirection: 'row',
     },
     logoImage:{
         marginRight: 20,

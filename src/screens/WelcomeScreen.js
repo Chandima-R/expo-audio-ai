@@ -28,7 +28,7 @@ export default function WelcomeScreen(){
             </View>
             <View style={styles.imageContainer}>
                 <Image
-                    source='../../assets/images/welcome.png'
+                    source={require('../../assets/welcome.png')}
                     style={{width: wp(75), height: wp(75)}}
                     contentFit="cover"
                     transition={1000}
