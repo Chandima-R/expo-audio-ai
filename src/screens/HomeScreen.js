@@ -13,6 +13,7 @@
   import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
   import { Image } from 'expo-image';
   import axios from 'axios';
+  import * as FileSystem from 'react-native-fs';
 
   export default function HomeScreen() {
     const [recording, setRecording] = useState(null);
@@ -22,8 +23,9 @@
     const [playingSoundIndex, setPlayingSoundIndex] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
     const [recordedAudioData, setRecordedAudioData] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [responseAvailable, setResponseAvailable] = useState(false);
+    const [isLoading, setIsLoading] = useState(false)
+    const [sound, setSound] = useState();
+    const [isPlaying, setIsPlaying] = useState(false);
 
     const route = useRoute();
     const { selectedLanguage, selectedGrade } = route.params;
@@ -57,6 +59,23 @@
       }
     };
 
+
+    const playAudio = async (audioUrl) => {
+      if (sound) {
+        await sound.unloadAsync();
+      }
+
+      const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri: audioUrl }
+      );
+
+      setSound(newSound);
+      await newSound.playAsync();
+      setIsPlaying(true);
+    };
+
+
+
     async function sendAudioToAPI(audioData, selectedLanguage, selectedGrade) {
       try {
         const apiUrl = 'https://536d-2402-4000-b281-f462-25ff-529d-118a-258b.ngrok-free.app/chatbot';
@@ -80,9 +99,11 @@
         });
         setIsLoading(false); // Disable loading indicator
 
+
+
         if (response?.data) {
           console.log('MP3 found');
-          setResponseAvailable(true); // Set to true when a response is available
+
         } else {
           console.error(401, 'API response does not contain audio URL');
         }
@@ -189,17 +210,6 @@
                 </View>
             ))}
           </ScrollView>
-
-          {responseAvailable && (
-              <TouchableOpacity
-                  style={styles.downloadButton}
-                  onPress={() => {
-                    // Implement your logic to download the response here
-                  }}
-              >
-                <Text style={styles.downloadButtonText}>Download Response</Text>
-              </TouchableOpacity>
-          )}
 
           <TouchableOpacity
               style={[styles.recordingButton, isLoading && styles.disabledButton]}
