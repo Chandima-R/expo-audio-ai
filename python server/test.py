@@ -7,7 +7,7 @@ import io
 
 app = Flask(__name__)
 
-target_server_url = "https://536d-2402-4000-b281-f462-25ff-529d-118a-258b.ngrok-free.app/chatbot"
+target_server_url = "https://fdd7-112-135-79-111.ngrok-free.app/chatbot"
 
 
 @app.route('/chatbot', methods=['POST'])
@@ -61,4 +61,4 @@ def chatbot():
         return jsonify({'error': 'An error occurred'}), 500
 
 if __name__ == '__main__':
-    app.run(host='192.168.23.95', port=5050, debug=True)
+    app.run(host='192.168.1.26', port=5050, debug=True)

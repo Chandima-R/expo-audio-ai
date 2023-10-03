@@ -13,9 +13,9 @@ import { useRoute } from '@react-navigation/native';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { Image } from 'expo-image';
 import axios from 'axios';
-import * as FileSystem from 'expo-file-system';
-// import * as FileSystem from 'react-native-fs';
 import { Buffer } from "buffer";
+import * as FileSystem from 'expo-file-system'
+import mime from "mime";
 
 export default function HomeScreen() {
   const [recording, setRecording] = useState(null);
@@ -108,6 +108,19 @@ export default function HomeScreen() {
       const mp3Data = Buffer.from(base64Data, 'base64').toString('binary');
 
       await FileSystem.writeAsStringAsync(filePath, mp3Data, { encoding: FileSystem.EncodingType.Binary });
+
+      const fileType = mime.getType(fileName)
+      const fileInfo = await FileSystem.getInfoAsync(filePath);
+      const fileSize = fileInfo.size;
+
+      console.log(222, fileType, fileSize)
+
+      const soundObject = new Audio.Sound();
+
+      console.log(2333, soundObject)
+      await soundObject.loadAsync({ uri: filePath });
+      // await soundObject.playAsync();
+
       return fileUri;
 
     } catch (error) {
@@ -119,8 +132,7 @@ export default function HomeScreen() {
 
   async function sendAudioToAPI(audioData, selectedLanguage, selectedGrade) {
     try {
-      const apiUrl = 'http://192.168.23.95:5050/chatbot';
-      // const apiUrl = 'https://536d-2402-4000-b281-f462-25ff-529d-118a-258b.ngrok-free.app/chatbot';
+      const apiUrl = 'http://192.168.1.26:5050/chatbot';
 
       const formData = new FormData();
       formData.append('language', selectedLanguage);
@@ -131,7 +143,7 @@ export default function HomeScreen() {
         type: 'audio/m4a',
       });
 
-      setIsLoading(true); // Enable loading indicator
+      setIsLoading(true);
 
       const response = await axios.post(apiUrl, formData, {
         headers: {
@@ -139,7 +151,7 @@ export default function HomeScreen() {
           'Accept': 'audio/mpeg',
         },
       });
-      setIsLoading(false); // Disable loading indicator
+      setIsLoading(false);
 
 
 
@@ -161,10 +173,10 @@ export default function HomeScreen() {
   const startRecording = async () => {
     try {
       if (recording) {
-        setIsLoading(true); // Enable loading indicator
+        setIsLoading(true);
         await recording.startAsync();
         setIsRecording(true);
-        setIsLoading(false); // Disable loading indicator
+        setIsLoading(false);
       } else {
         setMessage(
           'Recording object is not available. Please wait for initialization to complete.'
@@ -172,13 +184,13 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Failed to start recording:', error);
-      setIsLoading(false); // Disable loading indicator on error
+      setIsLoading(false);
     }
   };
 
   const stopRecording = async () => {
     if (recording) {
-      setIsLoading(true); // Enable loading indicator
+      setIsLoading(true);
       setIsRecording(false);
       try {
         await recording.stopAndUnloadAsync();
@@ -192,14 +204,13 @@ export default function HomeScreen() {
         setRecordings(updatedRecordings);
 
         const audioData = await recording.getURI();
-        // console.log("audioData",audioData)
         setRecordedAudioData(audioData);
 
         await sendAudioToAPI(audioData, selectedLanguage, selectedGrade);
       } catch (error) {
         console.error('Failed to stop recording:', error);
       } finally {
-        setIsLoading(false); // Disable loading indicator
+        setIsLoading(false);
       }
     }
   };
@@ -293,14 +304,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   disabledButton: {
-    backgroundColor: '#ccc', // You can choose a suitable disabled color
+    backgroundColor: '#ccc',
     zIndex: 50,
     padding: 10,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    opacity: 0.6, // You can adjust the opacity to make it visually disabled
+    opacity: 0.6,
   },
   imageContainer: {
     display: 'flex',
@@ -347,7 +358,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   downloadButton: {
-    backgroundColor: '#3498db', // Customize the color as needed
+    backgroundColor: '#3498db',
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
