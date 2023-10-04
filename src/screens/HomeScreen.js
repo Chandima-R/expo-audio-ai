@@ -1,226 +1,222 @@
-import { StatusBar } from 'expo-status-bar';
-import React, { useState, useEffect } from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { Audio } from 'expo-av';
-import { useRoute } from '@react-navigation/native';
-import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
-import { Image } from 'expo-image';
-import axios from 'axios';
-import { Buffer } from "buffer";
-import * as FileSystem from 'expo-file-system'
-import mime from "mime";
+  import { StatusBar } from 'expo-status-bar';
+  import React, { useState, useEffect } from 'react';
+  import {
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+  } from 'react-native';
+  import { Audio } from 'expo-av';
+  import { useRoute } from '@react-navigation/native';
+  import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
+  import { Image } from 'expo-image';
+  import axios from 'axios';
+  import { Buffer } from "buffer";
+  import * as FileSystem from 'expo-file-system'
+  import mime from "mime";
 
-export default function HomeScreen() {
-  const [recording, setRecording] = useState(null);
-  const [recordings, setRecordings] = useState([]);
-  const [message, setMessage] = useState('');
-  const [playingSound, setPlayingSound] = useState(null);
-  const [playingSoundIndex, setPlayingSoundIndex] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordedAudioData, setRecordedAudioData] = useState(null);
-  const [isLoading, setIsLoading] = useState(false)
-  const [sound, setSound] = useState();
-  const [isPlaying, setIsPlaying] = useState(false);
+  export default function HomeScreen() {
+    const [recording, setRecording] = useState(null);
+    const [recordings, setRecordings] = useState([]);
+    const [message, setMessage] = useState('');
+    const [playingSound, setPlayingSound] = useState(null);
+    const [playingSoundIndex, setPlayingSoundIndex] = useState(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordedAudioData, setRecordedAudioData] = useState(null);
+    const [isLoading, setIsLoading] = useState(false)
+    const [sound, setSound] = useState();
+    const [isPlaying, setIsPlaying] = useState(false);
 
-  const route = useRoute();
-  const { selectedLanguage, selectedGrade } = route.params;
+    const route = useRoute();
+    const { selectedLanguage, selectedGrade } = route.params;
 
-  useEffect(() => {
-    initializeRecording();
-  }, []);
+    useEffect(() => {
+      initializeRecording();
+    }, []);
 
-  const initializeRecording = async () => {
-    try {
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status === 'granted') {
-        const recordingObject = new Audio.Recording();
-        recordingObject.set
-        const recordingOptions = {
-          android: {
-            extension: '.m4a',
-            outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-            audioEncoder: Audio.AndroidAudioEncoder.AAC,
-            sampleRate: 44100,
-            numberOfChannels: 2,
-            bitRate: 128000,
-          },
-          ios: {
-            extension: '.m4a',
-            outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-            audioQuality: Audio.IOSAudioQuality.MAX,
-            sampleRate: 44100,
-            numberOfChannels: 2,
-            bitRate: 128000,
-            linearPCMBitDepth: 16,
-            linearPCMIsBigEndian: false,
-            linearPCMIsFloat: false,
-          },
-          web: {
-            mimeType: 'audio/webm',
-            bitsPerSecond: 128000,
-          },
-        };
-        await recordingObject.prepareToRecordAsync(recordingOptions);
+    const initializeRecording = async () => {
+      try {
+        const { status } = await Audio.requestPermissionsAsync();
+        if (status === 'granted') {
+          const recordingObject = new Audio.Recording();
+          recordingObject.set
+          const recordingOptions = {
+            android: {
+              extension: '.m4a',
+              outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+              audioEncoder: Audio.AndroidAudioEncoder.AAC,
+              sampleRate: 44100,
+              numberOfChannels: 2,
+              bitRate: 128000,
+            },
+            ios: {
+              extension: '.m4a',
+              outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+              audioQuality: Audio.IOSAudioQuality.MAX,
+              sampleRate: 44100,
+              numberOfChannels: 2,
+              bitRate: 128000,
+              linearPCMBitDepth: 16,
+              linearPCMIsBigEndian: false,
+              linearPCMIsFloat: false,
+            },
+            web: {
+              mimeType: 'audio/webm',
+              bitsPerSecond: 128000,
+            },
+          };
+          await recordingObject.prepareToRecordAsync(recordingOptions);
 
-        setRecording(recordingObject);
-      } else {
-        setMessage('Audio permissions not granted.');
+          setRecording(recordingObject);
+        } else {
+          setMessage('Audio permissions not granted.');
+        }
+      } catch (error) {
+        console.error('Failed to initialize recording:', error);
       }
-    } catch (error) {
-      console.error('Failed to initialize recording:', error);
-    }
-  };
+    };
 
 
-  const playAudio = async (audioUrl) => {
-    if (sound) {
-      await sound.unloadAsync();
-    }
-
-    const { sound: newSound } = await Audio.Sound.createAsync(
-      { uri: audioUrl }
-    );
-    setSound(newSound);
-    await newSound.playAsync();
-    setIsPlaying(true);
-  };
-
-  async function saveMP3ResponseToLocal(response) {
-    try {
-      const directory = FileSystem.documentDirectory + 'my-mp3s/';
-      const directoryInfo = await FileSystem.getInfoAsync(directory);
-      const fileName = `${Date.now()}.mp3`;
-      if (!directoryInfo.exists) {
-        await FileSystem.makeDirectoryAsync(directory);
+    const playAudio = async (audioUrl) => {
+      if (sound) {
+        await sound.unloadAsync();
       }
 
-      const filePath = `${directory}${fileName}`;
-      const fileUri = FileSystem.documentDirectory + 'my-mp3s/' + fileName;
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: audioUrl }
+      );
+      setSound(newSound);
+      await newSound.playAsync();
+      setIsPlaying(true);
+    };
 
-      const base64Data = response.data;
-      const mp3Data = Buffer.from(base64Data, 'base64').toString('binary');
+    const saveMP3ResponseToLocal = async (response) => {
+      try {
+        const directory = FileSystem.documentDirectory + 'my-mp3s/';
+        const directoryInfo = await FileSystem.getInfoAsync(directory);
+        const fileName = `${Date.now()}.mp3`;
+        if (!directoryInfo.exists) {
+          await FileSystem.makeDirectoryAsync(directory);
+        }
 
-      await FileSystem.writeAsStringAsync(filePath, mp3Data, { encoding: FileSystem.EncodingType.Binary });
+        const filePath = `${directory}${fileName}`;
+        const savedFileUri = FileSystem.documentDirectory + 'my-mp3s/' + fileName;
 
-      const fileType = mime.getType(fileName)
-      const fileInfo = await FileSystem.getInfoAsync(filePath);
-      const fileSize = fileInfo.size;
+        const base64Data = response.data;
+        const mp3Data = Buffer.from(base64Data, 'base64').toString('binary');
 
-      console.log(222, fileType, fileSize)
+        await FileSystem.writeAsStringAsync(filePath, mp3Data, { encoding: FileSystem.EncodingType.Binary });
 
-      const soundObject = new Audio.Sound();
+        const { sound, status } = await Audio.Sound.createAsync(
+            { uri: savedFileUri },
+            { shouldPlay: true }
+        );
 
-      console.log(2333, soundObject)
-      await soundObject.loadAsync({ uri: filePath });
-      // await soundObject.playAsync();
+        if (status.isLoaded) {
+          await sound.playAsync();
+        }
 
-      return fileUri;
-
-    } catch (error) {
-      console.error('Failed to save MP3 response:', error);
-      return null;
-    }
-  }
-
-
-  async function sendAudioToAPI(audioData, selectedLanguage, selectedGrade) {
-    try {
-      const apiUrl = 'http://192.168.1.26:5050/chatbot';
-
-      const formData = new FormData();
-      formData.append('language', selectedLanguage);
-      formData.append('grade', selectedGrade);
-      formData.append('audio', {
-        uri: audioData,
-        name: 'audio.m4a',
-        type: 'audio/m4a',
-      });
-
-      setIsLoading(true);
-
-      const response = await axios.post(apiUrl, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Accept': 'audio/mpeg',
-        },
-      });
-      setIsLoading(false);
-
-
-
-      if (response?.data) {
-        console.log('MP3 found');
-        const localUri = await saveMP3ResponseToLocal(response);
-        console.log(localUri)
-
-      } else {
-        console.error(401, 'API response does not contain audio URL');
+        return savedFileUri;
+      } catch (error) {
+        console.error('Failed to save MP3 response:', error);
+        return null;
       }
+    };
 
-    } catch (error) {
-      console.error('Failed to send audio to API:', error);
-      setIsLoading(false);
+
+    async function sendAudioToAPI(audioData, selectedLanguage, selectedGrade) {
+      try {
+        const apiUrl = 'http://192.168.1.26:5050/chatbot';
+
+        const formData = new FormData();
+        formData.append('language', selectedLanguage);
+        formData.append('grade', selectedGrade);
+        formData.append('audio', {
+          uri: audioData,
+          name: 'audio.m4a',
+          type: 'audio/m4a',
+        });
+
+        setIsLoading(true);
+
+        const response = await axios.post(apiUrl, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Accept': 'audio/mpeg',
+          },
+        });
+        setIsLoading(false);
+
+
+
+        if (response?.data) {
+          console.log('MP3 found');
+          const localUri = await saveMP3ResponseToLocal(response);
+          console.log(localUri)
+
+        } else {
+          console.error(401, 'API response does not contain audio URL');
+        }
+
+      } catch (error) {
+        console.error('Failed to send audio to API:', error);
+        setIsLoading(false);
+      }
     }
-  }
 
-  const startRecording = async () => {
-    try {
+    const startRecording = async () => {
+      try {
+        if (recording) {
+          setIsLoading(true);
+          await recording.startAsync();
+          setIsRecording(true);
+          setIsLoading(false);
+        } else {
+          setMessage(
+            'Recording object is not available. Please wait for initialization to complete.'
+          );
+        }
+      } catch (error) {
+        console.error('Failed to start recording:', error);
+        setIsLoading(false);
+      }
+    };
+
+    const stopRecording = async () => {
       if (recording) {
         setIsLoading(true);
-        await recording.startAsync();
-        setIsRecording(true);
-        setIsLoading(false);
-      } else {
-        setMessage(
-          'Recording object is not available. Please wait for initialization to complete.'
-        );
+        setIsRecording(false);
+        try {
+          await recording.stopAndUnloadAsync();
+          const updatedRecordings = [...recordings];
+          const { sound, status } = await recording.createNewLoadedSoundAsync();
+          updatedRecordings.push({
+            sound: sound,
+            duration: getDurationFormatted(status.durationMillis),
+            file: recording.getURI(),
+          });
+          setRecordings(updatedRecordings);
+
+          const audioData = await recording.getURI();
+          setRecordedAudioData(audioData);
+
+          await sendAudioToAPI(audioData, selectedLanguage, selectedGrade);
+        } catch (error) {
+          console.error('Failed to stop recording:', error);
+        } finally {
+          setIsLoading(false);
+        }
       }
-    } catch (error) {
-      console.error('Failed to start recording:', error);
-      setIsLoading(false);
-    }
-  };
-
-  const stopRecording = async () => {
-    if (recording) {
-      setIsLoading(true);
-      setIsRecording(false);
-      try {
-        await recording.stopAndUnloadAsync();
-        const updatedRecordings = [...recordings];
-        const { sound, status } = await recording.createNewLoadedSoundAsync();
-        updatedRecordings.push({
-          sound: sound,
-          duration: getDurationFormatted(status.durationMillis),
-          file: recording.getURI(),
-        });
-        setRecordings(updatedRecordings);
-
-        const audioData = await recording.getURI();
-        setRecordedAudioData(audioData);
-
-        await sendAudioToAPI(audioData, selectedLanguage, selectedGrade);
-      } catch (error) {
-        console.error('Failed to stop recording:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-  const getDurationFormatted = (millis) => {
-    const minutes = millis / 1000 / 60;
-    const minutesDisplay = Math.floor(minutes);
-    const seconds = Math.round((minutes - minutesDisplay) * 60);
-    const secondsDisplay = seconds < 10 ? `0${seconds}` : seconds;
-    return `${minutesDisplay}:${secondsDisplay}`;
-  };
+    };
+    const getDurationFormatted = (millis) => {
+      const minutes = millis / 1000 / 60;
+      const minutesDisplay = Math.floor(minutes);
+      const seconds = Math.round((minutes - minutesDisplay) * 60);
+      const secondsDisplay = seconds < 10 ? `0${seconds}` : seconds;
+      return `${minutesDisplay}:${secondsDisplay}`;
+    };
 
   return (
     <SafeAreaView style={styles.container}>
