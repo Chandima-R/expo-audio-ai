@@ -6,11 +6,7 @@ import uuid
 
 app = Flask(__name__)
 
-<<<<<<< Updated upstream
-target_server_url = "https://536d-2402-4000-b281-f462-25ff-529d-118a-258b.ngrok-free.app/chatbot"
-=======
 target_server_url = "https://37ab-122-255-11-216.ngrok-free.app/chatbot"
->>>>>>> Stashed changes
 
 
 @app.route('/chatbot', methods=['POST'], endpoint='chatbot_post')
@@ -98,8 +94,4 @@ def chatbot():
 
 
 if __name__ == '__main__':
-<<<<<<< Updated upstream
-    app.run(host='192.168.23.95', port=5050, debug=True)
-=======
     app.run(host='10.10.51.142', port=5050, debug=True)
->>>>>>> Stashed changes

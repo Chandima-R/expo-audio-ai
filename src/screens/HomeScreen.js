@@ -119,12 +119,7 @@ export default function HomeScreen() {
 
   async function sendAudioToAPI(audioData, selectedLanguage, selectedGrade) {
     try {
-<<<<<<< Updated upstream
-      const apiUrl = 'http://192.168.23.95:5050/chatbot';
-      // const apiUrl = 'https://536d-2402-4000-b281-f462-25ff-529d-118a-258b.ngrok-free.app/chatbot';
-=======
       const apiUrl = 'http://10.10.51.142:5050/chatbot';
->>>>>>> Stashed changes
 
       const formData = new FormData();
       formData.append('language', selectedLanguage);
@@ -135,28 +130,11 @@ export default function HomeScreen() {
         type: 'audio/m4a',
       });
 
-<<<<<<< Updated upstream
-      setIsLoading(true); // Enable loading indicator
-=======
       setIsLoading(true);
->>>>>>> Stashed changes
 
       const response = await axios.post(apiUrl, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-<<<<<<< Updated upstream
-          'Accept': 'audio/mpeg',
-        },
-      });
-      setIsLoading(false); // Disable loading indicator
-
-
-
-      if (response?.data) {
-        console.log('MP3 found');
-        const localUri = await saveMP3ResponseToLocal(response);
-        console.log(localUri)
-=======
         },
       });
 
@@ -170,7 +148,6 @@ export default function HomeScreen() {
           await sound.playAsync();
           setIsLoading(false);
         }
->>>>>>> Stashed changes
 
       } else {
         console.error(401, 'API response does not contain audio URL');
@@ -227,11 +204,8 @@ export default function HomeScreen() {
       }
     }
   };
-<<<<<<< Updated upstream
-=======
 
 
->>>>>>> Stashed changes
   const getDurationFormatted = (millis) => {
     const minutes = millis / 1000 / 60;
     const minutesDisplay = Math.floor(minutes);
