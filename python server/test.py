@@ -3,14 +3,17 @@ import os
 import subprocess
 import requests
 import uuid
-import io
 
 app = Flask(__name__)
 
+<<<<<<< Updated upstream
 target_server_url = "https://536d-2402-4000-b281-f462-25ff-529d-118a-258b.ngrok-free.app/chatbot"
+=======
+target_server_url = "https://37ab-122-255-11-216.ngrok-free.app/chatbot"
+>>>>>>> Stashed changes
 
 
-@app.route('/chatbot', methods=['POST'])
+@app.route('/chatbot', methods=['POST'], endpoint='chatbot_post')
 def chatbot():
     try:
         if 'audio' not in request.files:
@@ -50,15 +53,53 @@ def chatbot():
 
         if response.status_code == 200:
             print('Audio converted and sent successfully to the target server')
-            mp3_content = response.content  
-            return send_file(io.BytesIO(mp3_content), mimetype='audio/mp3')
+            mp3_content = response.content
+
+            mp3_folder = 'mp3'
+            os.makedirs(mp3_folder, exist_ok=True)
+
+            mp3_filename = unique_filename.replace(
+                '.wav', '.mp3')
+            mp3_save_path = os.path.join(mp3_folder, mp3_filename)
+
+            with open(mp3_save_path, 'wb') as mp3_file:
+                mp3_file.write(mp3_content)
+
+            return jsonify({'filename': mp3_filename})
 
         print('Failed to send audio to the target server')
         return jsonify({'error': 'Failed to send audio to the target server'}), 500
-    
+
     except Exception as e:
         print('An error occurred:', str(e))
         return jsonify({'error': 'An error occurred'}), 500
 
+
+@app.route('/chatbot', methods=['GET'], endpoint='chatbot_get')
+def chatbot():
+    try:
+        mp3_filename = request.args.get('filename')
+        print(mp3_filename)
+        if not mp3_filename:
+            return jsonify({'error': 'Missing "filename" parameter'}), 400
+
+        mp3_directory = 'mp3'
+        mp3_path = os.path.join(mp3_directory, mp3_filename)
+
+        if os.path.exists(mp3_path):
+            print('MP3 file found', mp3_path)
+            return send_file(mp3_path, mimetype='audio/mp3')
+        else:
+            return jsonify({'error': 'MP3 file not found'}), 404
+
+    except Exception as e:
+        print('An error occurred:', str(e))
+        return jsonify({'error': 'An error occurred'}), 500
+
+
 if __name__ == '__main__':
+<<<<<<< Updated upstream
     app.run(host='192.168.23.95', port=5050, debug=True)
+=======
+    app.run(host='10.10.51.142', port=5050, debug=True)
+>>>>>>> Stashed changes
