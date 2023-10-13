@@ -6,7 +6,7 @@ import uuid
 
 app = Flask(__name__)
 
-target_server_url = "https://37ab-122-255-11-216.ngrok-free.app/chatbot"
+target_server_url = "http://192.168.1.26:5000/chatbot"
 
 
 @app.route('/chatbot', methods=['POST'], endpoint='chatbot_post')
@@ -94,4 +94,4 @@ def chatbot():
 
 
 if __name__ == '__main__':
-    app.run(host='10.10.51.142', port=5050, debug=True)
+    app.run(host='192.168.1.26', port=5050, debug=True)

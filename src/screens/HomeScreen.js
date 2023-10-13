@@ -13,9 +13,6 @@ import { useRoute } from '@react-navigation/native';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { Image } from 'expo-image';
 import axios from 'axios';
-import * as FileSystem from 'expo-file-system';
-// import * as FileSystem from 'react-native-fs';
-import { Buffer } from "buffer";
 
 export default function HomeScreen() {
   const [recording, setRecording] = useState(null);
@@ -26,11 +23,11 @@ export default function HomeScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudioData, setRecordedAudioData] = useState(null);
   const [isLoading, setIsLoading] = useState(false)
-  const [sound, setSound] = useState();
-  const [isPlaying, setIsPlaying] = useState(false);
 
   const route = useRoute();
   const { selectedLanguage, selectedGrade } = route.params;
+
+  const language = selectedLanguage.toLowerCase();
 
   useEffect(() => {
     initializeRecording();
@@ -41,20 +38,20 @@ export default function HomeScreen() {
       const { status } = await Audio.requestPermissionsAsync();
       if (status === 'granted') {
         const recordingObject = new Audio.Recording();
-        recordingObject.set
+
         const recordingOptions = {
           android: {
             extension: '.m4a',
-            outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-            audioEncoder: Audio.AndroidAudioEncoder.AAC,
+            outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+            audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
             sampleRate: 44100,
             numberOfChannels: 2,
             bitRate: 128000,
           },
           ios: {
             extension: '.m4a',
-            outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-            audioQuality: Audio.IOSAudioQuality.MAX,
+            outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC,
+            audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MAX,
             sampleRate: 44100,
             numberOfChannels: 2,
             bitRate: 128000,
@@ -78,51 +75,12 @@ export default function HomeScreen() {
     }
   };
 
-
-  const playAudio = async (audioUrl) => {
-    if (sound) {
-      await sound.unloadAsync();
-    }
-
-    const { sound: newSound } = await Audio.Sound.createAsync(
-      { uri: audioUrl }
-    );
-    setSound(newSound);
-    await newSound.playAsync();
-    setIsPlaying(true);
-  };
-
-  async function saveMP3ResponseToLocal(response) {
+    async function sendAudioToAPI(audioData, language, selectedGrade) {
     try {
-      const directory = FileSystem.documentDirectory + 'my-mp3s/';
-      const directoryInfo = await FileSystem.getInfoAsync(directory);
-      const fileName = `${Date.now()}.mp3`;
-      if (!directoryInfo.exists) {
-        await FileSystem.makeDirectoryAsync(directory);
-      }
-
-      const filePath = `${directory}${fileName}`;
-      const fileUri = FileSystem.documentDirectory + 'my-mp3s/' + fileName;
-
-      const base64Data = response.data;
-      const mp3Data = Buffer.from(base64Data, 'base64').toString('binary');
-
-      await FileSystem.writeAsStringAsync(filePath, mp3Data, { encoding: FileSystem.EncodingType.Binary });
-      return fileUri;
-
-    } catch (error) {
-      console.error('Failed to save MP3 response:', error);
-      return null;
-    }
-  }
-
-
-  async function sendAudioToAPI(audioData, selectedLanguage, selectedGrade) {
-    try {
-      const apiUrl = 'http://10.10.51.142:5050/chatbot';
+      const apiUrl = 'http://192.168.1.26:5050/chatbot';
 
       const formData = new FormData();
-      formData.append('language', selectedLanguage);
+      formData.append('language', language);
       formData.append('grade', selectedGrade);
       formData.append('audio', {
         uri: audioData,
@@ -162,10 +120,10 @@ export default function HomeScreen() {
   const startRecording = async () => {
     try {
       if (recording) {
-        setIsLoading(true); // Enable loading indicator
+        setIsLoading(true);
         await recording.startAsync();
         setIsRecording(true);
-        setIsLoading(false); // Disable loading indicator
+        setIsLoading(false);
       } else {
         setMessage(
           'Recording object is not available. Please wait for initialization to complete.'
@@ -173,13 +131,13 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Failed to start recording:', error);
-      setIsLoading(false); // Disable loading indicator on error
+      setIsLoading(false); 
     }
   };
 
   const stopRecording = async () => {
     if (recording) {
-      setIsLoading(true); // Enable loading indicator
+      setIsLoading(true);
       setIsRecording(false);
       try {
         await recording.stopAndUnloadAsync();
@@ -196,11 +154,11 @@ export default function HomeScreen() {
         // console.log("audioData",audioData)
         setRecordedAudioData(audioData);
 
-        await sendAudioToAPI(audioData, selectedLanguage, selectedGrade);
+        await sendAudioToAPI(audioData, language, selectedGrade);
       } catch (error) {
         console.error('Failed to stop recording:', error);
       } finally {
-        setIsLoading(false); // Disable loading indicator
+        setIsLoading(false);
       }
     }
   };
@@ -296,14 +254,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   disabledButton: {
-    backgroundColor: '#ccc', // You can choose a suitable disabled color
+    backgroundColor: '#ccc',
     zIndex: 50,
     padding: 10,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    opacity: 0.6, // You can adjust the opacity to make it visually disabled
+    opacity: 0.6,
   },
   imageContainer: {
     display: 'flex',
@@ -350,7 +308,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   downloadButton: {
-    backgroundColor: '#3498db', // Customize the color as needed
+    backgroundColor: '#3498db',
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
