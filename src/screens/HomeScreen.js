@@ -32,6 +32,8 @@ export default function HomeScreen() {
   const route = useRoute();
   const { selectedLanguage, selectedGrade } = route.params;
 
+  const lowerCaseLanguage = selectedLanguage.toLowerCase();
+
   useEffect(() => {
     initializeRecording();
   }, []);
@@ -117,12 +119,14 @@ export default function HomeScreen() {
   }
 
 
-  async function sendAudioToAPI(audioData, selectedLanguage, selectedGrade) {
+  async function sendAudioToAPI(audioData, lowerCaseLanguage, selectedGrade) {
     try {
-      const apiUrl = 'http://10.10.51.142:5050/chatbot';
+      const apiUrl = 'http://192.168.57.227:5050/chatbot';
+
+      
 
       const formData = new FormData();
-      formData.append('language', selectedLanguage);
+      formData.append('language', lowerCaseLanguage);
       formData.append('grade', selectedGrade);
       formData.append('audio', {
         uri: audioData,
@@ -196,7 +200,7 @@ export default function HomeScreen() {
         // console.log("audioData",audioData)
         setRecordedAudioData(audioData);
 
-        await sendAudioToAPI(audioData, selectedLanguage, selectedGrade);
+        await sendAudioToAPI(audioData, lowerCaseLanguage, selectedGrade);
       } catch (error) {
         console.error('Failed to stop recording:', error);
       } finally {
